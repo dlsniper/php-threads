@@ -1,0 +1,22 @@
+This project was created by Florin Patan < florinpatan@gmail.com > after reading 
+online on various source but especially using the template code from here:
+http://www.kchodorow.com/blog/2011/08/11/php-extensions-made-eldrich-hello-world/
+
+Credis for the original framework on which this projects is based goes to 
+Kristina Chodorow < http://www.kchodorow.com/blog >
+
+Currently I'm developing it as an open source project but I reserve the right 
+to choose the appropiate license, it will still be open source, in the future 
+as I'm focusing on developing it right now.
+
+Should you find this useful or want to use it/make changes to it, just open an 
+issue on GITHub at: https://github.com/dlsniper/php-threads/ and let me know.
+
+Also please include this file as well as the other copyright headers/files in 
+your project/application/what-not if you are using my work. Also please give 
+me some  credit if this inspired you to do a better work that mine.
+
+Feel free to contact me either on the e-mail address above or on GITHub should
+you have any further questions.
+
+Thank you for respecting my work!
