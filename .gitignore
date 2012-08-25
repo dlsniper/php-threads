@@ -27,3 +27,5 @@ modules
 *.lo
 *.la
 run-tests.php
+.kdev_include_paths
+phpext.kdev4
