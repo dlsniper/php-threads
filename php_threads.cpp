@@ -30,9 +30,12 @@ zend_module_entry threads_module_entry = {
   STANDARD_MODULE_PROPERTIES
 };
 
+#ifdef __cplusplus 
+extern "C" {
 // install module
 ZEND_GET_MODULE(threads)
-
+}
+#endif
 
 void task1() { 
     php_printf("This is the TASK 1 FUNCTION post threads\n");
