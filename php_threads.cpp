@@ -10,7 +10,7 @@
 
 // define the function(s) we want to add
 zend_function_entry threads_functions[] = {
-  PHP_FE(thread, NULL)
+  PHP_FE(threaduri, NULL)
   { NULL, NULL, NULL }
 };
 
@@ -48,7 +48,7 @@ void task2() {
 
 
 // actual non-template code!
-PHP_FUNCTION(thread) {
+PHP_FUNCTION(threaduri) {
   
     php_printf("This is the MAIN FUNCTION pre threads\n");
   

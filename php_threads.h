@@ -3,6 +3,6 @@
 
 #ifdef __cplusplus 
 extern "C" {
-  PHP_FUNCTION(thread);
+  PHP_FUNCTION(threaduri);
 }
 #endif
