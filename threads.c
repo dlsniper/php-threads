@@ -143,13 +143,13 @@ int *runThreads(long threadsNumber) {
     long t;
 
     for(t=0; t<threadsNumber; t++){
-        php_printf("In main: creating thread %ld<br/>\n", t + 1);
-
         rc = pthread_create(&threads[t], NULL, printHello, (void *)t);
         if (rc){
             php_printf("ERROR; return code from pthread_create() is %d<br/>\n", rc);
             exit(-1);
         }
+
+        pthread_join(threads[t], NULL);
     }
 
     return SUCCESS;
@@ -161,13 +161,15 @@ PHP_FUNCTION(runThreads) {
 
     // Get the number of threads that the user wants to create
     long threadsNumber;
+
     zval *retval_ptr = NULL;
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lf", &threadsNumber, &fci, &fci_cache, &fci.params, &fci.param_count) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lf*", &threadsNumber, &fci, &fci_cache, &fci.params, &fci.param_count) == FAILURE) {
         RETURN_NULL();
     }
+
 
     fci.retval_ptr_ptr = &retval_ptr;
 
@@ -179,8 +181,6 @@ PHP_FUNCTION(runThreads) {
         ) {
         threadsNumber = numberOfCpuCores;
     }
-
-    php_printf("We gonna run %1d threads \n", (int)threadsNumber);
 
     // Run the threads
     runThreads(threadsNumber);
