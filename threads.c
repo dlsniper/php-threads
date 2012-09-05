@@ -9,11 +9,11 @@
 #include "zend_API.h"
 #include "zend_exceptions.h"
 
-// Include our header file
-#include "php_threads.h"
-
 // Include the threads support from C
 #include <pthread.h>
+
+// Include our header file
+#include "php_threads.h"
 
 /* If you declare any globals in php_threads.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(threads)
@@ -56,7 +56,6 @@ zend_module_entry threads_module_entry = {
 #ifdef COMPILE_DL_THREADS
 ZEND_GET_MODULE(threads)
 #endif
-
 
 /* {{{ PHP_INI
  */
@@ -127,23 +126,34 @@ PHP_MINFO_FUNCTION(threads) {
 }
 /* }}} */
 
-void *printHello(void *threadid) {
+void *printHello(void *thFunc) {
+
+    threadedFunction *thData;
+    thData = (threadedFunction *) thFunc;
+
     long tid;
-    tid = (long)threadid + 1;
+    tid = ((long)thData->threadId) + 1;
 
     php_printf("Hello World! It's me, thread #%ld out of many many threads!<br/>\n", tid);
 
-    pthread_exit(NULL);
+    pthread_exit(0);
 }
 
-int *runThreads(long threadsNumber) {
+int *runThreads(void *thFunc) {
+
+    threadedFunction *thData;
+    thData = (threadedFunction *) thFunc;
+
+    long threadsNumber = thData->threadCount;
 
     pthread_t threads[threadsNumber];
     int rc;
     long t;
 
+
     for(t=0; t<threadsNumber; t++){
-        rc = pthread_create(&threads[t], NULL, printHello, (void *)t);
+        thFunc->threadId = t;
+        rc = pthread_create(&threads[t], NULL, printHello, (void *) &thFunc);
         if (rc){
             php_printf("ERROR; return code from pthread_create() is %d<br/>\n", rc);
             exit(-1);
@@ -165,14 +175,13 @@ PHP_FUNCTION(runThreads) {
     zval *retval_ptr = NULL;
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
+    threadedFunction *thFunc;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lf*", &threadsNumber, &fci, &fci_cache, &fci.params, &fci.param_count) == FAILURE) {
         RETURN_NULL();
     }
 
-
     fci.retval_ptr_ptr = &retval_ptr;
-
 
     // Validate that we can run that number of threads
 
@@ -182,8 +191,12 @@ PHP_FUNCTION(runThreads) {
         threadsNumber = numberOfCpuCores;
     }
 
+    thFunc.threadCount = threadsNumber;
+    thFunc.fci = fci;
+    thFunc.fci_cahe = fci_cache;
+
     // Run the threads
-    runThreads(threadsNumber);
+    runThreads(thFunc);
 
     if (zend_call_function(&fci, &fci_cache TSRMLS_CC) == SUCCESS && fci.retval_ptr_ptr && *fci.retval_ptr_ptr) {
         COPY_PZVAL_TO_ZVAL(*return_value, *fci.retval_ptr_ptr);

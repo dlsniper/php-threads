@@ -20,8 +20,14 @@ extern zend_module_entry threads_module_entry;
 #define PHP_THREADS_EXTNAME "threads"
 #define PHP_THREADS_VERSION "0.2"
 
-zend_fcall_info user_compare_fci;
-zend_fcall_info_cache user_compare_fci_cache;
+struct _threadableFunction {
+    // required
+    zend_object std;
+
+    long threadId, threadCount;
+    zend_fcall_info *fci;
+    zend_fcall_info_cache *fci_cache;
+} threadableFunction;
 
 PHP_MINIT_FUNCTION(threads);
 PHP_MSHUTDOWN_FUNCTION(threads);
@@ -31,13 +37,6 @@ PHP_MINFO_FUNCTION(threads);
 
 PHP_FUNCTION(runThreads);
 PHP_FUNCTION(getThreadsMaxCount);
-
-typedef struct {
-    long threadId;
-    long threadCount;
-    zend_fcall_info *fci;
-    zend_fcall_info_cache *fci_cache;
-} threadableFunction;
 
 /*
 ZEND_BEGIN_MODULE_GLOBALS(threads)
