@@ -2,7 +2,9 @@
 
 error_reporting(E_ALL & E_STRICT);
 
-threaduri(3);
+echo "We can run at most " . getThreadsMaxCount() . " threads" . PHP_EOL;
 
-threaduri(5);
+runThreads(3);
+
+runThreads(5);
 

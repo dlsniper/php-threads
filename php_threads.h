@@ -26,7 +26,8 @@ PHP_RINIT_FUNCTION(threads);
 PHP_RSHUTDOWN_FUNCTION(threads);
 PHP_MINFO_FUNCTION(threads);
 
-PHP_FUNCTION(threaduri);
+PHP_FUNCTION(runThreads);
+PHP_FUNCTION(getThreadsMaxCount);
 
 /*
 ZEND_BEGIN_MODULE_GLOBALS(threads)

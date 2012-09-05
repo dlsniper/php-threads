@@ -27,7 +27,8 @@ static int numberOfCpuCores;
  * Every user visible function must have an entry in threads_functions[].
  */
 const zend_function_entry threads_functions[] = {
-	PHP_FE(threaduri, NULL)
+	PHP_FE(runThreads, NULL)
+	PHP_FE(getThreadsMaxCount, NULL)
 	PHP_FE_END	/* Must be the last line in threads_functions[] */
 };
 /* }}} */
@@ -46,7 +47,7 @@ zend_module_entry threads_module_entry = {
 	NULL,
 	PHP_MINFO(threads),
 #if ZEND_MODULE_API_NO >= 20010901
-    PHP_THREADS_VERSION,
+	PHP_THREADS_VERSION,
 #endif
 	STANDARD_MODULE_PROPERTIES
 };
@@ -108,10 +109,12 @@ PHP_MSHUTDOWN_FUNCTION(threads)
  */
 PHP_MINFO_FUNCTION(threads)
 {
-    char        buf[5];
+    char buf[5];
 
     php_info_print_table_start();
     php_info_print_table_row(2, "Threads support", "enabled");
+    //snprintf(buf2, sizeof(buf2), "%2f", );
+    php_info_print_table_row(2, "Version", PHP_THREADS_VERSION);
     snprintf(buf, sizeof(buf), "%ld", numberOfCpuCores);
     php_info_print_table_row(2, "Maximum number of threads", buf);
     php_info_print_table_end();
@@ -147,9 +150,9 @@ int *runThreads(long threadsNumber) {
     return SUCCESS;
 }
 
-/* {{{ proto string threaduri(int arg)
+/* {{{ proto string runThreads(int arg)
    Return a string that matches the return number from the threads */
-PHP_FUNCTION(threaduri) {
+PHP_FUNCTION(runThreads) {
 
     // Get the number of threads that the user wants to create
     long threadsNumber;
@@ -171,6 +174,12 @@ PHP_FUNCTION(threaduri) {
 }
 /* }}} */
 
+/* {{{ proto string getThreadsMaxCount()
+   Return a string that matches the return number from the threads */
+PHP_FUNCTION(getThreadsMaxCount) {
+    RETURN_LONG(numberOfCpuCores);
+}
+/* }}} */
 /*
  * Local variables:
  * tab-width: 4
