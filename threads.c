@@ -27,9 +27,9 @@ static int numberOfCpuCores;
  * Every user visible function must have an entry in threads_functions[].
  */
 const zend_function_entry threads_functions[] = {
-	PHP_FE(runThreads, NULL)
-	PHP_FE(getThreadsMaxCount, NULL)
-	PHP_FE_END	/* Must be the last line in threads_functions[] */
+    PHP_FE(runThreads, NULL)
+    PHP_FE(getThreadsMaxCount, NULL)
+    PHP_FE_END	/* Must be the last line in threads_functions[] */
 };
 /* }}} */
 
@@ -37,19 +37,19 @@ const zend_function_entry threads_functions[] = {
  */
 zend_module_entry threads_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
-	STANDARD_MODULE_HEADER,
+    STANDARD_MODULE_HEADER,
 #endif
-	PHP_THREADS_EXTNAME,
-	threads_functions,
-	PHP_MINIT(threads),
-	PHP_MSHUTDOWN(threads),
-	NULL,
-	NULL,
-	PHP_MINFO(threads),
+    PHP_THREADS_EXTNAME,
+    threads_functions,
+    PHP_MINIT(threads),
+    PHP_MSHUTDOWN(threads),
+    NULL,
+    NULL,
+    PHP_MINFO(threads),
 #if ZEND_MODULE_API_NO >= 20010901
-	PHP_THREADS_VERSION,
+    PHP_THREADS_VERSION,
 #endif
-	STANDARD_MODULE_PROPERTIES
+    STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
 
@@ -82,14 +82,14 @@ static void php_threads_init_globals(zend_threads_globals *threads_globals)
  */
 PHP_MINIT_FUNCTION(threads)
 {
-	/*
-	REGISTER_INI_ENTRIES();
-	*/
+    /*
+    REGISTER_INI_ENTRIES();
+    */
 
     // Get the number of CPUs from the system to know how many threads we can handle
     numberOfCpuCores = sysconf(_SC_NPROCESSORS_ONLN);
 
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
@@ -97,56 +97,61 @@ PHP_MINIT_FUNCTION(threads)
  */
 PHP_MSHUTDOWN_FUNCTION(threads)
 {
-	/*
-	UNREGISTER_INI_ENTRIES();
-	*/
+    /*
+    UNREGISTER_INI_ENTRIES();
+    */
 
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */
 
 /* {{{ PHP_MINFO_FUNCTION
  */
-PHP_MINFO_FUNCTION(threads)
-{
+PHP_MINFO_FUNCTION(threads) {
     char buf[5];
 
     php_info_print_table_start();
+
     php_info_print_table_row(2, "Threads support", "enabled");
-    //snprintf(buf2, sizeof(buf2), "%2f", );
+
     php_info_print_table_row(2, "Version", PHP_THREADS_VERSION);
+
     snprintf(buf, sizeof(buf), "%ld", numberOfCpuCores);
     php_info_print_table_row(2, "Maximum number of threads", buf);
+
     php_info_print_table_end();
 
-	/*
-	DISPLAY_INI_ENTRIES();
-	*/
+    /*
+    DISPLAY_INI_ENTRIES();
+    */
 }
 /* }}} */
 
 void *printHello(void *threadid) {
-   long tid;
-   tid = (long)threadid;
-   php_printf("Hello World! It's me, thread #%ld!\n", tid);
-   pthread_exit(NULL);
+    long tid;
+    tid = (long)threadid + 1;
+
+    php_printf("Hello World! It's me, thread #%ld out of many many threads!<br/>\n", tid);
+
+    pthread_exit(NULL);
 }
 
 int *runThreads(long threadsNumber) {
-  
-    pthread_t threads[threadsNumber];
 
+    pthread_t threads[threadsNumber];
     int rc;
     long t;
+
     for(t=0; t<threadsNumber; t++){
-       php_printf("In main: creating thread %ld\n", t);
-       rc = pthread_create(&threads[t], NULL, printHello, (void *)t);
-       if (rc){
-          php_printf("ERROR; return code from pthread_create() is %d\n", rc);
-          exit(-1);
-       }
+        php_printf("In main: creating thread %ld<br/>\n", t + 1);
+
+        rc = pthread_create(&threads[t], NULL, printHello, (void *)t);
+        if (rc){
+            php_printf("ERROR; return code from pthread_create() is %d<br/>\n", rc);
+            exit(-1);
+        }
     }
-    
+
     return SUCCESS;
 }
 
@@ -156,21 +161,37 @@ PHP_FUNCTION(runThreads) {
 
     // Get the number of threads that the user wants to create
     long threadsNumber;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &threadsNumber) == FAILURE) {
-	RETURN_NULL();
+    zval *retval_ptr = NULL;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fci_cache;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lf", &threadsNumber, &fci, &fci_cache, &fci.params, &fci.param_count) == FAILURE) {
+        RETURN_NULL();
     }
-    
+
+    fci.retval_ptr_ptr = &retval_ptr;
+
+
     // Validate that we can run that number of threads
+
     if (threadsNumber > numberOfCpuCores ||
-	    threadsNumber < 1
-	    ) {
-	    threadsNumber = numberOfCpuCores;
+        threadsNumber < 1
+        ) {
+        threadsNumber = numberOfCpuCores;
     }
-    
+
     php_printf("We gonna run %1d threads \n", (int)threadsNumber);
 
     // Run the threads
     runThreads(threadsNumber);
+
+    if (zend_call_function(&fci, &fci_cache TSRMLS_CC) == SUCCESS && fci.retval_ptr_ptr && *fci.retval_ptr_ptr) {
+        COPY_PZVAL_TO_ZVAL(*return_value, *fci.retval_ptr_ptr);
+    }
+
+    if (fci.params) {
+        efree(fci.params);
+    }
 }
 /* }}} */
 
@@ -180,6 +201,9 @@ PHP_FUNCTION(getThreadsMaxCount) {
     RETURN_LONG(numberOfCpuCores);
 }
 /* }}} */
+
+
+
 /*
  * Local variables:
  * tab-width: 4
