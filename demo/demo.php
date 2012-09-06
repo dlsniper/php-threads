@@ -11,7 +11,7 @@ runThreads(3, function() use ($asd) {
 }, $asd);
 
 runThreads(5, function() use ($asd){
-    $result = $asd;
+    $result = rand(1, 100);
     echo 'ion #' . $result . "<br/>";
 });
 

@@ -20,7 +20,7 @@ extern zend_module_entry threads_module_entry;
 #define PHP_THREADS_EXTNAME "threads"
 #define PHP_THREADS_VERSION "0.2"
 
-struct _threadableFunction {
+typedef struct _threadableFunction {
     // required
     zend_object std;
 

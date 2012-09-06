@@ -128,41 +128,21 @@ PHP_MINFO_FUNCTION(threads) {
 
 void *printHello(void *thFunc) {
 
-    threadedFunction *thData;
-    thData = (threadedFunction *) thFunc;
+    threadableFunction *thData;
+    thData = (threadableFunction *) thFunc;
 
-    long tid;
+    long tid, tcnt;
     tid = ((long)thData->threadId) + 1;
+    tcnt = ((long)thData->threadCount);
 
-    php_printf("Hello World! It's me, thread #%ld out of many many threads!<br/>\n", tid);
-
-    pthread_exit(0);
-}
-
-int *runThreads(void *thFunc) {
-
-    threadedFunction *thData;
-    thData = (threadedFunction *) thFunc;
-
-    long threadsNumber = thData->threadCount;
-
-    pthread_t threads[threadsNumber];
-    int rc;
-    long t;
+    php_printf("Hello World! It's me, ze random thread #%2d out of many many threads (%2d to be more accurate)!<br/>\n", tid, tcnt);
 
 
-    for(t=0; t<threadsNumber; t++){
-        thFunc->threadId = t;
-        rc = pthread_create(&threads[t], NULL, printHello, (void *) &thFunc);
-        if (rc){
-            php_printf("ERROR; return code from pthread_create() is %d<br/>\n", rc);
-            exit(-1);
-        }
-
-        pthread_join(threads[t], NULL);
+    if (zend_call_function(thData->fci, thData->fci_cache TSRMLS_CC) == SUCCESS && thData->fci->retval_ptr_ptr && *thData->fci->retval_ptr_ptr) {
+        //COPY_PZVAL_TO_ZVAL(*return_value, *fci.retval_ptr_ptr);
     }
 
-    return SUCCESS;
+    pthread_exit(0);
 }
 
 /* {{{ proto string runThreads(int arg)
@@ -175,36 +155,63 @@ PHP_FUNCTION(runThreads) {
     zval *retval_ptr = NULL;
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
-    threadedFunction *thFunc;
+    threadableFunction *thFunc;
 
+    // Parse the input parameters
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lf*", &threadsNumber, &fci, &fci_cache, &fci.params, &fci.param_count) == FAILURE) {
         RETURN_NULL();
     }
 
+    // Assign the output pointer stuff yada yada
     fci.retval_ptr_ptr = &retval_ptr;
 
     // Validate that we can run that number of threads
-
     if (threadsNumber > numberOfCpuCores ||
         threadsNumber < 1
         ) {
         threadsNumber = numberOfCpuCores;
     }
 
-    thFunc.threadCount = threadsNumber;
-    thFunc.fci = fci;
-    thFunc.fci_cahe = fci_cache;
+    // Allocate the memory for the function we are about to run
+    thFunc = (threadableFunction*)emalloc(sizeof(threadableFunction));
+    memset(thFunc, 0, sizeof(threadableFunction));
 
-    // Run the threads
-    runThreads(thFunc);
+    // Assign the thingies
+    thFunc->threadCount = threadsNumber;
+    thFunc->fci = &fci;
+    thFunc->fci_cache = &fci_cache;
 
-    if (zend_call_function(&fci, &fci_cache TSRMLS_CC) == SUCCESS && fci.retval_ptr_ptr && *fci.retval_ptr_ptr) {
-        COPY_PZVAL_TO_ZVAL(*return_value, *fci.retval_ptr_ptr);
+    // Define our threads array
+    pthread_t threads[threadsNumber];
+    int rc;
+    long t;
+
+    // Create the threads
+    for(t=0; t<threadsNumber; t++){
+        thFunc->threadId = t;
+        rc = pthread_create(&threads[t], NULL, printHello, (void *)thFunc);
+
+        // Check if we have ze error
+        if (rc){
+            // @TODO: Convert this to an exception
+            php_printf("ERROR; return code from pthread_create() is %d<br/>\n", rc);
+            exit(-1);
+        }
+
+        // And make them run so that we don't finish the function until we finished the threads
+        pthread_join(threads[t], NULL);
     }
 
-    if (fci.params) {
-        efree(fci.params);
+    // Free memory, I hope
+    if (thFunc->fci->params) {
+        efree(thFunc->fci->params);
     }
+
+    // Free memory, I hope
+    efree(thFunc);
+
+    // Buh bye
+    RETURN_NULL();
 }
 /* }}} */
 
